@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CinePulse - Movie & Series Streaming Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #0b0f19; color: #f8fafc; }
+    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0b0f19; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+  </style>
+</head>
+<body class="min-h-screen pb-12">
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 bg-rose-600/20 text-rose-500 rounded-xl border border-rose-500/30">
+          <i class="fa-solid fa-film text-2xl"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">CinePulse</h1>
+          <p class="text-xs text-slate-400">Discover & Track Movies</p>
+        </div>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div class="relative flex-1 md:w-72">
+          <input type="text" id="searchInput" placeholder="Buscar filme ou série..." class="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl px-4 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-rose-500 pr-10">
+          <i class="fa-solid fa-magnifying-glass absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+        </div>
+        <button id="viewWatchlistBtn" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 rounded-xl text-xs font-semibold text-slate-300 transition flex items-center gap-2">
+          <i class="fa-solid fa-bookmark text-rose-500"></i> Minha Lista (<span id="watchlistCount">0</span>)
+        </button>
+        <button id="configBtn" title="TMDB API Key" class="p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700/60 rounded-xl text-slate-400 hover:text-white transition">
+          <i class="fa-solid fa-gear"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Banner Hero (Featured) -->
+  <section id="heroSection" class="max-w-7xl mx-auto px-4 mt-6">
+    <div class="relative rounded-3xl overflow-hidden glass-card border border-slate-800 min-h-[320px] flex items-end p-6 md:p-10 bg-cover bg-center" style="background-image: linear-gradient(to top, rgba(11,15,25,0.95), rgba(11,15,25,0.3)), url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=1200&q=80')">
+      <div class="max-w-xl space-y-3">
+        <span class="px-3 py-1 bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-full text-[10px] font-bold uppercase tracking-wider">Destaque do Mês</span>
+        <h2 id="heroTitle" class="text-3xl md:text-4xl font-black text-white leading-tight">Interstellar</h2>
+        <p id="heroDesc" class="text-xs text-slate-300 line-clamp-3 leading-relaxed">Uma equipe de exploradores viaja através de um buraco de minhoca no espaço em uma tentativa de garantir a sobrevivência da humanidade.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-4 mt-8 space-y-6">
+
+    <!-- Categories / Tabs -->
+    <div class="flex items-center justify-between overflow-x-auto pb-2 gap-3 border-b border-slate-800/80">
+      <div class="flex items-center gap-2">
+        <button class="genre-btn active px-4 py-2 bg-rose-600 text-white rounded-xl text-xs font-semibold transition" data-genre="all">Todos</button>
+        <button class="genre-btn px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition" data-genre="Ação">Ação</button>
+        <button class="genre-btn px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition" data-genre="Ficção Científica">Ficção Científica</button>
+        <button class="genre-btn px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition" data-genre="Animação">Animação</button>
+        <button class="genre-btn px-4 py-2 bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-semibold transition" data-genre="Drama">Drama</button>
+      </div>
+
+      <span id="activeTabLabel" class="text-xs text-slate-400 font-medium whitespace-nowrap">Exibindo: Catálogo Geral</span>
+    </div>
+
+    <!-- Movies Grid -->
+    <div id="moviesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+      <!-- Dynamically populated -->
+    </div>
+
+    <!-- Empty State -->
+    <div id="emptyState" class="hidden text-center py-16">
+      <i class="fa-solid fa-film text-5xl text-slate-600 mb-3"></i>
+      <p class="text-sm font-medium text-slate-400">Nenhum filme encontrado</p>
+      <p class="text-xs text-slate-500 mt-1">Tente ajustar seus termos de busca ou filtros.</p>
+    </div>
+  </main>
+
+  <!-- Movie Details Modal -->
+  <div id="detailsModal" class="fixed inset-0 bg-black/80 backdrop-blur-md hidden items-center justify-center p-4 z-50">
+    <div class="glass-card bg-slate-900 rounded-3xl max-w-2xl w-full p-6 border border-slate-700 relative overflow-hidden">
+      <button id="closeDetailsBtn" class="absolute right-4 top-4 text-slate-400 hover:text-white p-2 rounded-full bg-slate-800/80 z-10"><i class="fa-solid fa-xmark text-lg"></i></button>
+
+      <div class="flex flex-col sm:flex-row gap-6">
+        <img id="modalPoster" src="" alt="Poster" class="w-full sm:w-48 h-72 object-cover rounded-2xl shadow-xl">
+        <div class="flex-1 space-y-3">
+          <div class="flex items-center gap-2">
+            <span id="modalRating" class="px-2.5 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-lg text-xs font-bold"><i class="fa-solid fa-star mr-1"></i> 8.6</span>
+            <span id="modalYear" class="text-xs text-slate-400 font-medium">2014</span>
+            <span id="modalGenre" class="text-xs text-slate-400 font-medium">• Ficção Científica</span>
+          </div>
+
+          <h3 id="modalTitle" class="text-2xl font-bold text-white leading-tight">Título do Filme</h3>
+          <p id="modalOverview" class="text-xs text-slate-300 leading-relaxed">Sinopse do filme...</p>
+
+          <div class="pt-2 border-t border-slate-800 space-y-1">
+            <p class="text-xs text-slate-400"><strong class="text-slate-200">Elenco:</strong> <span id="modalCast">Elenco principal</span></p>
+          </div>
+
+          <div class="pt-4 flex items-center gap-3">
+            <button id="toggleWatchlistModalBtn" class="w-full py-2.5 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold text-white transition flex items-center justify-center gap-2">
+              <i class="fa-solid fa-bookmark"></i> Adicionar à Minha Lista
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Key Config Modal -->
+  <div id="configModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+    <div class="glass-card bg-slate-900 rounded-2xl max-w-md w-full p-6 border border-slate-700">
+      <h3 class="text-base font-bold text-white mb-2">Configurações do TMDB</h3>
+      <p class="text-xs text-slate-400 mb-4">Insira sua chave de API do TMDB para carregar lançamentos e filmes reais.</p>
+      <input type="text" id="apiKeyInput" placeholder="Sua TMDB API Key" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-500 mb-4">
+      <div class="flex justify-end gap-3">
+        <button id="closeConfigBtn" class="px-4 py-2 rounded-xl text-xs font-medium text-slate-400 hover:text-white">Cancelar</button>
+        <button id="saveApiKeyBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 rounded-xl text-xs font-bold text-white transition">Salvar Key</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State Initialisation
+    let tmdbApiKey = localStorage.getItem('cinepulse_tmdb_key') || '';
+    let watchlist = JSON.parse(localStorage.getItem('cinepulse_watchlist')) || [];
+    let currentGenre = 'all';
+    let isShowingWatchlistOnly = false;
+    let selectedMovie = null;
+
+    // Mock Data for instant demonstration
+    const mockMovies = [
+      {
+        id: 101,
+        title: 'Interstellar',
+        rating: 8.6,
+        year: 2014,
+        genre: 'Ficção Científica',
+        overview: 'Uma equipe de exploradores viaja através de um buraco de minhoca no espaço em uma tentativa de garantir a sobrevivência da humanidade.',
+        cast: 'Matthew McConaughey, Anne Hathaway, Jessica Chastain',
+        poster: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 102,
+        title: 'Spider-Man: Across the Spider-Verse',
+        rating: 8.7,
+        year: 2023,
+        genre: 'Animação',
+        overview: 'Miles Morales é catapultado através do Multiverso, onde ele encontra uma equipe de Pessoas-Aranha encarregadas de proteger sua própria existência.',
+        cast: 'Shameik Moore, Hailee Steinfeld, Oscar Isaac',
+        poster: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 103,
+        title: 'O Poderoso Chefão',
+        rating: 9.2,
+        year: 1972,
+        genre: 'Drama',
+        overview: 'O patriarca idoso de uma dinastia do crime organizado transfere o controle de seu império clandestino para seu filho relutante.',
+        cast: 'Marlon Brando, Al Pacino, James Caan',
+        poster: 'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 104,
+        title: 'Mad Max: Estrada da Fúria',
+        rating: 8.1,
+        year: 2015,
+        genre: 'Ação',
+        overview: 'Em uma terra devastada pós-apocalíptica, uma mulher se rebela contra um tirano em busca de sua terra natal com a ajuda de um grupo de prisioneiras.',
+        cast: 'Tom Hardy, Charlize Theron, Nicholas Hoult',
+        poster: 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=600&q=80'
+      },
+      {
+        id: 105,
+        title: 'Duna: Parte 2',
+        rating: 8.8,
+        year: 2024,
+        genre: 'Ficção Científica',
+        overview: 'Paul Atreides se une a Chani e aos Fremen enquanto busca vingança contra os conspiradores que destruíram sua família.',
+        cast: 'Timothée Chalamet, Zendaya, Rebecca Ferguson',
+        poster: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80'
+      }
+    ];
+
+    // Selectors
+    const moviesGrid = document.getElementById('moviesGrid');
+    const emptyState = document.getElementById('emptyState');
+    const searchInput = document.getElementById('searchInput');
+    const watchlistCount = document.getElementById('watchlistCount');
+    const activeTabLabel = document.getElementById('activeTabLabel');
+    const viewWatchlistBtn = document.getElementById('viewWatchlistBtn');
+    
+    const detailsModal = document.getElementById('detailsModal');
+    const closeDetailsBtn = document.getElementById('closeDetailsBtn');
+    const toggleWatchlistModalBtn = document.getElementById('toggleWatchlistModalBtn');
+
+    const configModal = document.getElementById('configModal');
+    const configBtn = document.getElementById('configBtn');
+    const closeConfigBtn = document.getElementById('closeConfigBtn');
+    const saveApiKeyBtn = document.getElementById('saveApiKeyBtn');
+
+    // Update Watchlist Counter
+    function updateWatchlistCounter() {
+      watchlistCount.textContent = watchlist.length;
+      localStorage.setItem('cinepulse_watchlist', JSON.stringify(watchlist));
+    }
+
+    // Render Movies Cards
+    function renderMovies() {
+      const search = searchInput.value.toLowerCase();
+      let listToRender = isShowingWatchlistOnly ? watchlist : mockMovies;
+
+      const filtered = listToRender.filter(m => {
+        const matchesSearch = m.title.toLowerCase().includes(search) || m.overview.toLowerCase().includes(search);
+        const matchesGenre = currentGenre === 'all' || m.genre === currentGenre;
+        return matchesSearch && matchesGenre;
+      });
+
+      moviesGrid.innerHTML = '';
+
+      if (filtered.length === 0) {
+        emptyState.classList.remove('hidden');
+      } else {
+        emptyState.classList.add('hidden');
+        filtered.forEach(m => {
+          const isSaved = watchlist.some(w => w.id === m.id);
+          moviesGrid.innerHTML += `
+            <div class="glass-card rounded-2xl overflow-hidden group hover:scale-[1.03] transition duration-300 cursor-pointer flex flex-col justify-between" onclick="openDetails(${m.id})">
+              <div class="relative overflow-hidden aspect-[2/3]">
+                <img src="${m.poster}" alt="${m.title}" class="w-full h-full object-cover group-hover:opacity-90 transition">
+                <div class="absolute top-2 right-2 px-2 py-1 bg-black/70 backdrop-blur-md rounded-lg text-[10px] font-bold text-amber-400 border border-amber-500/20">
+                  <i class="fa-solid fa-star mr-1"></i>${m.rating}
+                </div>
+                <button onclick="event.stopPropagation(); toggleWatchlist(${m.id})" class="absolute top-2 left-2 p-2 bg-black/70 backdrop-blur-md rounded-lg text-xs ${isSaved ? 'text-rose-500' : 'text-slate-300'} hover:text-rose-500 transition">
+                  <i class="fa-solid fa-bookmark"></i>
+                </button>
+              </div>
+              <div class="p-3.5 space-y-1">
+                <h4 class="text-xs font-bold text-white truncate">${m.title}</h4>
+                <div class="flex items-center justify-between text-[10px] text-slate-400">
+                  <span>${m.year}</span>
+                  <span>${m.genre}</span>
+                </div>
+              </div>
+            </div>
+          `;
+        });
+      }
+
+      updateWatchlistCounter();
+    }
+
+    // Toggle Watchlist item
+    window.toggleWatchlist = (id) => {
+      const movie = mockMovies.find(m => m.id === id) || watchlist.find(m => m.id === id);
+      if (!movie) return;
+
+      const index = watchlist.findIndex(w => w.id === id);
+      if (index > -1) {
+        watchlist.splice(index, 1);
+      } else {
+        watchlist.push(movie);
+      }
+
+      if (selectedMovie && selectedMovie.id === id) {
+        updateModalWatchlistButton(id);
+      }
+
+      renderMovies();
+    };
+
+    // Modal Details
+    window.openDetails = (id) => {
+      selectedMovie = mockMovies.find(m => m.id === id) || watchlist.find(m => m.id === id);
+      if (!selectedMovie) return;
+
+      document.getElementById('modalTitle').textContent = selectedMovie.title;
+      document.getElementById('modalPoster').src = selectedMovie.poster;
+      document.getElementById('modalOverview').textContent = selectedMovie.overview;
+      document.getElementById('modalYear').textContent = selectedMovie.year;
+      document.getElementById('modalGenre').textContent = `• ${selectedMovie.genre}`;
+      document.getElementById('modalRating').innerHTML = `<i class="fa-solid fa-star mr-1"></i> ${selectedMovie.rating}`;
+      document.getElementById('modalCast').textContent = selectedMovie.cast;
+
+      updateModalWatchlistButton(id);
+
+      detailsModal.classList.remove('hidden');
+      detailsModal.classList.add('flex');
+    };
+
+    function updateModalWatchlistButton(id) {
+      const isSaved = watchlist.some(w => w.id === id);
+      toggleWatchlistModalBtn.innerHTML = isSaved
+        ? `<i class="fa-solid fa-bookmark"></i> Remover da Minha Lista`
+        : `<i class="fa-solid fa-bookmark"></i> Adicionar à Minha Lista`;
+      
+      toggleWatchlistModalBtn.className = isSaved
+        ? `w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-700`
+        : `w-full py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2`;
+    }
+
+    toggleWatchlistModalBtn.addEventListener('click', () => {
+      if (selectedMovie) {
+        toggleWatchlist(selectedMovie.id);
+      }
+    });
+
+    closeDetailsBtn.addEventListener('click', () => {
+      detailsModal.classList.add('hidden');
+      detailsModal.classList.remove('flex');
+    });
+
+    // Genre Buttons
+    document.querySelectorAll('.genre-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.genre-btn').forEach(b => {
+          b.classList.remove('bg-rose-600', 'text-white');
+          b.classList.add('bg-slate-800', 'text-slate-400');
+        });
+        e.target.classList.remove('bg-slate-800', 'text-slate-400');
+        e.target.classList.add('bg-rose-600', 'text-white');
+
+        currentGenre = e.target.getAttribute('data-genre');
+        renderMovies();
+      });
+    });
+
+    // Watchlist Toggle View
+    viewWatchlistBtn.addEventListener('click', () => {
+      isShowingWatchlistOnly = !isShowingWatchlistOnly;
+      if (isShowingWatchlistOnly) {
+        viewWatchlistBtn.classList.add('bg-rose-600/20', 'border-rose-500/40', 'text-rose-400');
+        activeTabLabel.textContent = 'Exibindo: Minha Lista Salva';
+      } else {
+        viewWatchlistBtn.classList.remove('bg-rose-600/20', 'border-rose-500/40', 'text-rose-400');
+        activeTabLabel.textContent = 'Exibindo: Catálogo Geral';
+      }
+      renderMovies();
+    });
+
+    // Configuration Modal
+    configBtn.addEventListener('click', () => {
+      document.getElementById('apiKeyInput').value = tmdbApiKey;
+      configModal.classList.remove('hidden');
+      configModal.classList.add('flex');
+    });
+
+    closeConfigBtn.addEventListener('click', () => {
+      configModal.classList.add('hidden');
+      configModal.classList.remove('flex');
+    });
+
+    saveApiKeyBtn.addEventListener('click', () => {
+      tmdbApiKey = document.getElementById('apiKeyInput').value.trim();
+      localStorage.setItem('cinepulse_tmdb_key', tmdbApiKey);
+      configModal.classList.add('hidden');
+      configModal.classList.remove('flex');
+      renderMovies();
+    });
+
+    searchInput.addEventListener('input', renderMovies);
+
+    // Initial Load
+    document.addEventListener('DOMContentLoaded', () => {
+      renderMovies();
+    });
+  </script>
+</body>
+</html>
